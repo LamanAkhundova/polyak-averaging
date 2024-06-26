@@ -1,0 +1,47 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class SimpleNN(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(SimpleNN, self).__init__()
+        self.fc1 = nn.Linear(input_dim, 128)
+        self.fc2 = nn.Linear(128, output_dim)
+    
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+
+def soft_update(target_net, local_net, tau):
+    """ Perform a soft update (Polyak averaging) """
+    for target_param, local_param in zip(target_net.parameters(), local_net.parameters()):
+        target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
+
+# Example usage
+input_dim = 4
+output_dim = 2
+local_net = SimpleNN(input_dim, output_dim)
+target_net = SimpleNN(input_dim, output_dim)
+
+# Initialize the target network with the same weights as the local network
+soft_update(target_net, local_net, tau=1.0)  # tau=1.0 makes it equivalent to hard update
+
+# Training loop
+optimizer = optim.Adam(local_net.parameters(), lr=0.001)
+tau = 0.001  # Tau for soft updates
+
+for epoch in range(10):
+    for step in range(100):  # Assume 100 steps per epoch for simplicity
+        # Example training step
+        state = torch.randn((1, input_dim))
+        action_values = local_net(state)
+        loss = torch.mean(action_values)  # Dummy loss for example purposes
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        
+        # Soft update
+        soft_update(target_net, local_net, tau)
+        
+print("Training with soft updates completed.")
